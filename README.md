@@ -1,4 +1,4 @@
-[README.md](https://github.com/user-attachments/files/26125935/README.md)
+[README.md](https://github.com/user-attachments/files/26126049/README.md)
 
 <p align="center">
   <img src="https://www.redhat.com/rhdc/managed-files/rh_community_logo_reverse.svg" alt="Red Hat Community Logo" width="300"/>
@@ -7,6 +7,101 @@
 <h1 align="center">t430ctl - Enterprise Optimization Utility for ThinkPad T430</h1>
 
 <p align="center">
+  <a href="https://www.rust-lang.org" title="Built with Rust">
+    <img src="https://img.shields.io/badge/Built%20with-Rust-orange?style=for-the-badge&logo=rust" alt="Built with Rust">
+  </a>
+  <a href="https://github.com/ITSsafer-DevOps/Optimization_RHEL_RustLang/actions/workflows/rust.yml">
+    <img src="https://img.shields.io/github/actions/workflows/status/ITSsafer-DevOps/Optimization_RHEL_RustLang/rust.yml?branch=main&style=for-the-badge&logo=githubactions&label=CI" alt="CI Build Status">
+  </a>
+</p>
+
+<p align="center">
+  <strong>Project Author:</strong> Kristián Kašník<br/>
+  <a href="https://github.com/ITSsafer-DevOps/Optimization_RHEL_RustLang/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT">
+  </a>
+</p>
+
+`t430ctl` is a robust, command-line utility engineered in Rust to systematically apply performance and power-saving optimizations for Lenovo ThinkPad T430 systems running Red Hat Enterprise Linux 9 (or compatible derivatives). It provides a declarative, idempotent, and reversible mechanism for managing key system parameters, adhering to enterprise best practices.
+
+---
+
+## Project Philosophy
+
+The design of `t430ctl` is guided by three core principles:
+
+1.  **System Integration:** Instead of using brittle, standalone scripts, `t430ctl` leverages the standard `tuned` framework provided by Red Hat. This ensures that optimizations are managed by a system service and are applied consistently across reboots.
+2.  **Safety and Reversibility:** All changes are fully reversible via a single `revert` command. The tool is designed to be non-destructive and predictable.
+3.  **Idempotency:** The `apply` operation can be run multiple times without causing unintended side effects. The system will always converge to the same desired state.
+
+## Architectural Workflow
+
+The utility orchestrates several core Linux subsystems. The diagrams below, rendered using the **Mermaid.js** framework, illustrate the operational flow for the `apply` and `revert` commands.
+
+### `apply` Workflow
+
+```mermaid
+%%{init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#EE0000', 'primaryTextColor': '#fff', 'primaryBorderColor': '#9d0a0a', 'lineColor': '#555', 'secondaryColor': '#fdf0f0', 'tertiaryColor': '#fff'}}}%%
+graph TD
+    subgraph "User Action"
+        A["[user@host]$ sudo t430ctl apply"]
+    end
+
+    subgraph "t430ctl `apply` Workflow"
+        style B fill:#222,stroke:#c00,stroke-width:2px,color:#fff
+        B{"1. Validate<br><i>Root & Command Checks</i>"}
+        C["2. Create & Activate Tuned Profile<br><i>/etc/tuned/t430-balanced-dev/tuned.conf</i>"]
+        D["3. Patch TLP Config<br><i>/etc/tlp.conf</i>"]
+        E(("(System Optimized)"))
+    end
+
+    A --> B;
+    B -- Success --> C;
+    C --> D;
+    D --> E;
+```
+
+### `revert` Workflow
+
+```mermaid
+%%{init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#EE0000', 'primaryTextColor': '#fff', 'primaryBorderColor': '#9d0a0a', 'lineColor': '#555', 'secondaryColor': '#fdf0f0', 'tertiaryColor': '#fff'}}}%%
+graph TD
+    subgraph "User Action"
+        A["[user@host]$ sudo t430ctl revert"]
+    end
+
+    subgraph "t430ctl `revert` Workflow"
+        style B fill:#222,stroke:#c00,stroke-width:2px,color:#fff
+        B{"1. Validate<br><i>Root & Command Checks</i>"}
+        C["2. Activate `balanced` Profile<br><i>tuned-adm profile balanced</i>"]
+        D["3. Delete Custom Profile & Revert TLP<br><i>rm -rf /etc/tuned/t430-balanced-dev<br>Patch /etc/tlp.conf</i>"]
+        E(("(System State Restored)"))
+    end
+
+    A --> B;
+    B -- Success --> C;
+    C --> D;
+    D --> E;
++    subgraph "User Action"
++        A["[user@host]$ sudo t430ctl revert"]
++    end
++
++    subgraph "t430ctl `revert` Workflow"
++        style B fill:#222,stroke:#c00,stroke-width:2px,color:#fff
++        B{"1. Validate<br><i>Root & Command Checks</i>"}
++        C["2. Activate `balanced` Profile<br><i>tuned-adm profile balanced</i>"]
++        D["3. Delete Custom Profile<br><i>rm -rf /etc/tuned/t430-balanced-dev</i>"]
++        E["4. Delete Sysctl Config<br><i>rm /etc/sysctl.d/99-t430.conf</i>"]
++        F["5. Revert TLP Config<br><i>/etc/tlp.conf</i>"]
++        G(("(System State Restored)"))
++    end
++
++    A --> B;
++    B -- Success --> C;
++    C --> D;
++    D --> E;
++    E --> F;
++    F --> G;
   <a href="https://www.rust-lang.org" title="Built with Rust">
     <img src="https://img.shields.io/badge/Built%20with-Rust-orange?style=for-the-badge&logo=rust" alt="Built with Rust">
   </a>
