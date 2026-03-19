@@ -1,4 +1,4 @@
-[README.md](https://github.com/user-attachments/files/26125871/README.md)
+[README.md](https://github.com/user-attachments/files/26125935/README.md)
 
 <p align="center">
   <img src="https://www.redhat.com/rhdc/managed-files/rh_community_logo_reverse.svg" alt="Red Hat Community Logo" width="300"/>
@@ -7,12 +7,18 @@
 <h1 align="center">t430ctl - Enterprise Optimization Utility for ThinkPad T430</h1>
 
 <p align="center">
-  <strong>Author:</strong> Kristián Kašník<br/>
+  <a href="https://www.rust-lang.org" title="Built with Rust">
+    <img src="https://img.shields.io/badge/Built%20with-Rust-orange?style=for-the-badge&logo=rust" alt="Built with Rust">
+  </a>
+  <a href="https://github.com/ITSsafer-DevOps/Optimization_RHEL_RustLang/actions/workflows/rust.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/ITSsafer-DevOps/Optimization_RHEL_RustLang/rust.yml?branch=main&style=for-the-badge&logo=githubactions&label=CI" alt="CI Build Status">
+  </a>
+</p>
+
+<p align="center">
+  <strong>Project Author:</strong> Kristián Kašník<br/>
   <a href="https://github.com/ITSsafer-DevOps/Optimization_RHEL_RustLang/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT">
-  </a>
-  <a href="https://github.com/ITSsafer-DevOps/Optimization_RHEL_RustLang/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/ITSsafer-DevOps/Optimization_RHEL_RustLang/rust.yml?branch=main" alt="Build Status">
   </a>
 </p>
 
@@ -38,25 +44,25 @@ The utility orchestrates several core Linux subsystems. The diagrams below, rend
 %%{init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#EE0000', 'primaryTextColor': '#fff', 'primaryBorderColor': '#9d0a0a', 'lineColor': '#555', 'secondaryColor': '#fdf0f0', 'tertiaryColor': '#fff'}}}%%
 graph TD
     subgraph "User Action"
-        A[<font color=black><b>[user@host]$</b> sudo t430ctl apply</font>]
+        A["[user@host]$ sudo t430ctl apply"]
     end
 
     subgraph "t430ctl `apply` Workflow"
         style B fill:#222,stroke:#c00,stroke-width:2px,color:#fff
-        B{1. Validate<br><i>Root & Command Checks</i>}
-        C[2. Create Tuned Profile<br><i>/etc/tuned/t430-balanced-dev/tuned.conf</i>]
-        D[3. Set Live Kernel Tunables<br><i>/sys/devices/.../scaling_governor<br>/sys/block/sda/queue/scheduler</i>]
-        E[4. Patch TLP Config<br><i>/etc/tlp.conf</i>]
-        F[5. Activate Profile via `tuned-adm`<br><i>Applies persistent settings</i>]
-        G((System Optimized))
+        B{"1. Validate<br><i>Root & Command Checks</i>"}
+        C["2. Create Tuned Profile<br><i>/etc/tuned/t430-balanced-dev/tuned.conf</i>"]
+        D["3. Set Live Kernel Tunables<br><i>/sys/devices/.../scaling_governor<br>/sys/block/sda/queue/scheduler</i>"]
+        E["4. Patch TLP Config<br><i>/etc/tlp.conf</i>"]
+        F["5. Activate Profile via `tuned-adm`<br><i>Applies persistent settings</i>"]
+        G(("(System Optimized)"))
     end
 
-    A --> B
-    B -- Success --> C
-    C --> D
-    D --> E
-    E --> F
-    F --> G
+    A --> B;
+    B -- Success --> C;
+    C --> D;
+    D --> E;
+    E --> F;
+    F --> G;
 ```
 
 ### `revert` Workflow
