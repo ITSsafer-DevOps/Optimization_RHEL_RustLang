@@ -1,57 +1,91 @@
-[README.md](https://github.com/user-attachments/files/26125828/README.md)
+[README.md](https://github.com/user-attachments/files/26125871/README.md)
+
 <p align="center">
   <img src="https://www.redhat.com/rhdc/managed-files/rh_community_logo_reverse.svg" alt="Red Hat Community Logo" width="300"/>
 </p>
 
 <h1 align="center">t430ctl - Enterprise Optimization Utility for ThinkPad T430</h1>
 
-`t430ctl` is a robust, command-line utility engineered in Rust to systematically apply performance and power-saving optimizations for Lenovo ThinkPad T430 systems running Red Hat Enterprise Linux 9 (or compatible derivatives like Fedora). It provides a declarative, idempotent, and reversible mechanism for managing key system parameters.
+<p align="center">
+  <strong>Author:</strong> Kristián Kašník<br/>
+  <a href="https://github.com/ITSsafer-DevOps/Optimization_RHEL_RustLang/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT">
+  </a>
+  <a href="https://github.com/ITSsafer-DevOps/Optimization_RHEL_RustLang/actions">
+    <img src="https://img.shields.io/github/actions/workflow/status/ITSsafer-DevOps/Optimization_RHEL_RustLang/rust.yml?branch=main" alt="Build Status">
+  </a>
+</p>
+
+`t430ctl` is a robust, command-line utility engineered in Rust to systematically apply performance and power-saving optimizations for Lenovo ThinkPad T430 systems running Red Hat Enterprise Linux 9 (or compatible derivatives). It provides a declarative, idempotent, and reversible mechanism for managing key system parameters, adhering to enterprise best practices.
 
 ---
 
-## Architectural Overview
+## Project Philosophy
 
-The utility orchestrates several core Linux subsystems to achieve its goals. The primary mechanism is a custom `tuned` profile, which ensures that settings are persistent and managed by a standard system service.
+The design of `t430ctl` is guided by three core principles:
+
+1.  **System Integration:** Instead of using brittle, standalone scripts, `t430ctl` leverages the standard `tuned` framework provided by Red Hat. This ensures that optimizations are managed by a system service and are applied consistently across reboots.
+2.  **Safety and Reversibility:** All changes are fully reversible via a single `revert` command. The tool is designed to be non-destructive and predictable.
+3.  **Idempotency:** The `apply` operation can be run multiple times without causing unintended side effects. The system will always converge to the same desired state.
+
+## Architectural Workflow
+
+The utility orchestrates several core Linux subsystems. The diagrams below, rendered using the **Mermaid.js** framework, illustrate the operational flow for the `apply` and `revert` commands.
+
+### `apply` Workflow
 
 ```mermaid
 %%{init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#EE0000', 'primaryTextColor': '#fff', 'primaryBorderColor': '#9d0a0a', 'lineColor': '#555', 'secondaryColor': '#fdf0f0', 'tertiaryColor': '#fff'}}}%%
 graph TD
-    subgraph "User Interface"
-        direction LR
-        U1[<font color=black><b>[user@host]$</b> sudo t430ctl apply</font>]
-        U2[<font color=black><b>[user@host]$</b> sudo t430ctl revert</font>]
-        U3[<font color=black><b>[user@host]$</b> t430ctl diag</font>]
+    subgraph "User Action"
+        A[<font color=black><b>[user@host]$</b> sudo t430ctl apply</font>]
     end
 
-    subgraph "t430ctl Core Engine"
-        style Core fill:#222,stroke:#c00,stroke-width:2px,color:#fff
-        Core(<b>t430ctl</b>)
-        U1 --> Core
-        U2 --> Core
-        U3 --> Core
-        Core -- apply --> Apply(apply::run)
-        Core -- revert --> Revert(revert::run)
-        Core -- diag --> Diag(diag::run)
+    subgraph "t430ctl `apply` Workflow"
+        style B fill:#222,stroke:#c00,stroke-width:2px,color:#fff
+        B{1. Validate<br><i>Root & Command Checks</i>}
+        C[2. Create Tuned Profile<br><i>/etc/tuned/t430-balanced-dev/tuned.conf</i>]
+        D[3. Set Live Kernel Tunables<br><i>/sys/devices/.../scaling_governor<br>/sys/block/sda/queue/scheduler</i>]
+        E[4. Patch TLP Config<br><i>/etc/tlp.conf</i>]
+        F[5. Activate Profile via `tuned-adm`<br><i>Applies persistent settings</i>]
+        G((System Optimized))
     end
 
-    subgraph "System Services & Configuration"
-        style Tuned fill:#333,stroke:#c00,color:#fff
-        style TLP fill:#333,stroke:#c00,color:#fff
-        style Sysfs fill:#333,stroke:#c00,color:#fff
-        
-        Tuned(<b>Tuned Service</b><br>/etc/tuned/t430-balanced-dev)
-        TLP(<b>TLP Service</b><br>/etc/tlp.conf)
-        Sysfs(<b>Kernel Interfaces</b><br>/sys, /proc)
-    end
-
-    Apply -- Manages --> Tuned
-    Apply -- Manages --> TLP
-    Revert -- Manages --> Tuned
-    Revert -- Manages --> TLP
-    Diag -- Reads state from --> Tuned
-    Diag -- Reads state from --> TLP
-    Diag -- Reads state from --> Sysfs
+    A --> B
+    B -- Success --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
 ```
+
+### `revert` Workflow
+
+```mermaid
+%%{init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#EE0000', 'primaryTextColor': '#fff', 'primaryBorderColor': '#9d0a0a', 'lineColor': '#555', 'secondaryColor': '#fdf0f0', 'tertiaryColor': '#fff'}}}%%
+graph TD
+    subgraph "User Action"
+        A[<font color=black><b>[user@host]$</b> sudo t430ctl revert</font>]
+    end
+
+    subgraph "t430ctl `revert` Workflow"
+        style B fill:#222,stroke:#c00,stroke-width:2px,color:#fff
+        B{1. Validate<br><i>Root & Command Checks</i>}
+        C[2. Activate `balanced` Profile<br><i>tuned-adm profile balanced</i>]
+        D[3. Delete Custom Profile<br><i>rm -rf /etc/tuned/t430-balanced-dev</i>]
+        E[4. Delete Sysctl Config<br><i>rm /etc/sysctl.d/99-t430.conf</i>]
+        F[5. Revert TLP Config<br><i>/etc/tlp.conf</i>]
+        G((System State Restored))
+    end
+
+    A --> B
+    B -- Success --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+```
+
 
 ## System Requirements
 
@@ -59,25 +93,26 @@ graph TD
 *   **Operating System:** Red Hat Enterprise Linux 9.x, Fedora 38+, or a compatible derivative.
 *   **System Packages:** The following packages must be installed and enabled:
     ```bash
+    # Install required system utilities and build tools
     sudo dnf install tuned tlp tlp-rdw lm_sensors cpupower git rustc cargo
     
-    # Enable the services
+    # Enable the core system services for power management
     sudo systemctl enable --now tuned
     sudo systemctl enable --now tlp
     ```
 
 ## Deployment and Operational Guide
 
-### 1. Build from Source
+### Step 1: Build from Source
 
-First, clone the repository and build the release binary.
+Clone the official repository and compile the project. Using the `--release` flag is strongly recommended as it builds an optimized executable.
 
 ```bash
 # Clone the repository
-git clone https://github.com/<YOUR_USERNAME>/t430ctl.git
-cd t430ctl
+git clone https://github.com/ITSsafer-DevOps/Optimization_RHEL_RustLang.git
+cd Optimization_RHEL_RustLang
 
-# Build the optimized release binary
+# Build the optimized release binary. This may take a few minutes on the first run.
 cargo build --release
 ```
 
